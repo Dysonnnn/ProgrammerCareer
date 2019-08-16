@@ -90,3 +90,17 @@ ROUTE [-f] [-p] [-4|-6] command [destination]
     > route DELETE 157.0.0.0
     > route DELETE 3ffe::/32
 ```    
+
+
+
+
+## 扫描局域网内的ip地址
+在cmd命令窗口输入
+```sh
+for /L %i IN (1,1,254) DO ping -w 2 -n 1 192.168.0.%i # 192.168.0 是局域网网段，需要根据实际情况去修改
+```
+等待几分钟命令处理完成，然后在cmd命令窗口输入
+```sh
+arp -a
+```
+即可看到 ip地址和对应的mac 物理地址
