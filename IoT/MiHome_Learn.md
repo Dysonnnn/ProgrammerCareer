@@ -13,7 +13,7 @@
 sudo apt-get install bluez bluez-hcidump
 ```
 2. 通过hcitool工具扫描获取 蓝牙mac地址,扫描过程中，需要开启手机米家app连接米家蓝牙温湿度计读取一下数据。否则扫描不出mac地址
-```
+```bash
 bash-4.4# sudo hcitool lescan
 Set scan parameters failed: Operation timed out
 bash-4.4# hcitool lescan
@@ -22,13 +22,17 @@ LE Scan ...
 
 ```
 
+---- 扫描出来了  蓝牙温湿度计的名字：LYWSD03MMC  地址： xxx(见equipment文件)
+
+
+
 3. Hassio可以直接进入Homeassistant容器执行第二步的操作【hassio 自带hcitool】
-```
+```bash
 docker exec -it homeassistant bash
 ```
 
 ## 配置Yaml
-```
+```yaml
 sensor:
   - platform: mitemp_bt
     mac: '11:22:33:AA:BB:CC'
@@ -71,9 +75,9 @@ group:
 ----
 
 
-（更新）米家蓝牙温湿度计2接入
-https://bbs.hassbian.com/thread-9037-1-1.html
+[（更新）米家蓝牙温湿度计2接入](https://bbs.hassbian.com/thread-9037-1-1.html)
 (出处: 『瀚思彼岸』» 智能家居技术论坛)
+
 米家蓝牙温湿度计2 通过具有蓝牙的 Linux 设备作为网桥，接入 MQTT，并被HASS 订阅
 请忘了原来那一版愚蠢的方法……
 
@@ -95,7 +99,7 @@ cd MiTemperature2
 touch sendtoMQTT.sh
 ```
 编辑 Shell 脚本，保存并退出
-```
+```sh
 vim sendtoMQTT.sh
 # 将以下内容粘贴到文件中，并修改 mqtt.host mqtt.username mqtt.passwd
 # 例如：mosquitto_pub -h 192.168.1.77 -t "mibridge/$2/temp" -u mqtt -P mqtt -i "mibridge" -m "$3"
@@ -104,19 +108,32 @@ mosquitto_pub -h mqtt.host -t "mibridge/$2/temp" -u mqtt.username -P mqtt.passwd
 mosquitto_pub -h mqtt.host -t "mibridge/$2/humidity" -u mqtt.username -P mqtt.passwd -i "mibridge" -m "$4"
 mosquitto_pub -h mqtt.host -t "mibridge/$2/batterylevel" -u mqtt.username -P mqtt.passwd -i "mibridge" -m "$5"
 ```
+
+**DSssss的更新：**
+```
+# 使用变量，可以批量使用，例如：
+mqtt_username="mqtt"
+xxx xxx -u mqtt_username
+```
+
+
+
 给脚本赋予运行权限
 ```
 chmod +x sendtoMQTT.sh
 ```
 
 让程序在后台运行，并回调脚本向 mqtt 发布信息
-```
+```py
 # 修改 device.name device.MAC-Address 并运行
 # 例如 nohup python3 LYWSD03MMC.py --callback sendtoMQTT.sh -b 1 --name ciwo -d AA:BB:CC:CD:EE:FF
 nohup python3 LYWSD03MMC.py --callback sendtoMQTT.sh -b 1 --name device.name -d device.MAC-Address &
 # 每次重启设备，需要重新运行以上命令，或想办法配置成启动时自动执行
 # 退出当前 bash 时，请使用 exit 命令，而不是直接关闭窗口，保证程序能在后台持续运行
+```
+
 配置 HASS mqtt 传感器，订阅相关主题
+```sh
 # 修改 device.name 到与上面运行命令相同
 sensor:
   - platform: mqtt
@@ -141,3 +158,34 @@ sensor:
 hass 本身是有 RESTAPI 的，如果没有 mqtt 的朋友，可以考虑在 hass 中创建一些 input_number 和 template sensor，用 curl POST 数据，实现接入。（方法更新在18楼，可自行研究）
 希望大家多学，多研究，多交流。
 请忽略下面过时的附件
+
+
+
+???
+嗨，
+我有问题有人可以帮忙吗？
+
+文件“ ./LYWSD03MMC.py”，第20行
+温度：float 
+^ 
+SyntaxError：语法无效
+
+请执行
+python3 --version
+看起来您没有按要求使用Python 3.7。
+
+
+
+编译安装了python3.7.6
+
+```sh
+python37 LYWSD03MMC.py -d AA:BB:CC:CD:EE:FF -r -b
+Trying to connect to AA:BB:CC:CD:EE:FF
+Connection lost
+Waiting...
+Trying to connect to AA:BB:CC:CD:EE:FF
+Connection lost
+Waiting...
+Trying to connect to AA:BB:CC:CD:EE:FF
+
+```
